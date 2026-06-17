@@ -23,6 +23,8 @@ TEAM_MAP = {
     'Canada':                           ('加拿大',       '🇨🇦', '主辦國'),
     'Bosnia and Herzegovina':           ('波黑',         '🇧🇦', ''),
     'Bosnia & Herzegovina':             ('波黑',         '🇧🇦', ''),
+    'Bosnia-Herzegovina':               ('波黑',         '🇧🇦', ''),
+    'Bosnia Herzegovina':               ('波黑',         '🇧🇦', ''),
     'Qatar':                            ('卡達',         '🇶🇦', ''),
     'Brazil':                           ('巴西',         '🇧🇷', ''),
     'Morocco':                          ('摩洛哥',       '🇲🇦', ''),
@@ -72,6 +74,15 @@ TEAM_MAP = {
     'Ghana':                            ('加納',         '🇬🇭', ''),
     'Panama':                           ('巴拿馬',       '🇵🇦', ''),
 }
+
+
+def normalize_group(raw: str) -> str:
+    """'GROUP_A' or 'Group A' or 'group_a' → 'A'"""
+    raw = raw.strip()
+    for prefix in ('GROUP_', 'Group ', 'group_'):
+        if raw.startswith(prefix):
+            return raw[len(prefix):]
+    return raw
 
 
 def team_info(api_name):
@@ -131,15 +142,14 @@ def main():
     r2.raise_for_status()
     matches_data = r2.json()
 
-    # Collect finished results per group
+    # Collect finished results per group (don't filter by stage name — it varies)
     group_results: dict[str, list[str]] = {}
     group_played: dict[str, int] = {}
     for m in matches_data.get('matches', []):
-        if m.get('stage') != 'GROUP_STAGE':
+        raw_grp = m.get('group') or ''
+        if not raw_grp:
             continue
-        grp = m.get('group', '').replace('GROUP_', '')
-        if not grp:
-            continue
+        grp = normalize_group(raw_grp)
         if m['status'] in ('FINISHED', 'PAUSED'):
             rs = result_str(m)
             if rs:
@@ -152,7 +162,7 @@ def main():
     for standing in standings_data.get('standings', []):
         if standing.get('type') != 'TOTAL':
             continue
-        grp = standing.get('group', '').replace('GROUP_', '')
+        grp = normalize_group(standing.get('group') or '')
         if not grp or grp in seen:
             continue
         seen.add(grp)
@@ -168,9 +178,12 @@ def main():
                 'pts': row['points'],
             })
 
+        # derive played from standings (sum of each team's played / 2)
+        played = sum(t['p'] for t in teams) // 2
+
         groups.append({
             'id': grp,
-            'played': group_played.get(grp, 0),
+            'played': played,
             'teams': teams,
             'results': group_results.get(grp, []),
             'tieNote': tie_note(teams),
@@ -179,6 +192,7 @@ def main():
     groups.sort(key=lambda g: g['id'])
 
     total_played = sum(g['played'] for g in groups)
+    print(f'  group IDs: {[g["id"] for g in groups]}')
     if total_played <= 24:
         round_label = '第1輪'
     elif total_played <= 48:
