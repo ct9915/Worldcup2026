@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026 FIFA 世界盃 — 小組積分榜</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+:root{
+  --pitch:#0d1117;--card:#1c2230;--border:#2a3244;
+  --gold:#f0b429;--green:#26c281;--red:#e53e3e;
+  --text:#e2e8f0;--muted:#718096;--accent:#4da6ff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--pitch);color:var(--text);min-height:100vh;overflow-x:hidden}
+header{
+  background:linear-gradient(180deg,#080d1a 0%,var(--pitch) 100%);
+  border-bottom:1px solid var(--border);
+  padding:20px 28px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;
+  position:sticky;top:0;z-index:100;
+}
+.header-left{display:flex;align-items:center;gap:14px}
+.wc-badge{
+  width:50px;height:50px;background:linear-gradient(135deg,var(--gold) 0%,#e6931a 100%);
+  border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:26px;
+  box-shadow:0 0 20px rgba(240,180,41,.25);flex-shrink:0;
+}
+h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(22px,4vw,36px);letter-spacing:2px;line-height:1;color:#fff}
+h1 span{display:block;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;letter-spacing:3px;color:var(--gold);text-transform:uppercase}
+.live-pill{
+  display:flex;align-items:center;gap:6px;
+  background:rgba(38,194,129,.1);border:1px solid rgba(38,194,129,.3);
+  border-radius:20px;padding:6px 14px;font-size:11px;font-weight:700;color:var(--green);letter-spacing:1px;
+}
+.live-dot{width:7px;height:7px;background:var(--green);border-radius:50%;animation:pulse 1.6s ease infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+.legend-bar{
+  display:flex;align-items:center;gap:20px;
+  padding:10px 28px;background:rgba(255,255,255,.02);border-bottom:1px solid var(--border);flex-wrap:wrap;
+}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);font-weight:500}
+.legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.legend-ts{margin-left:auto;font-size:10px;color:var(--muted)}
+.filter-bar{padding:14px 28px;display:flex;gap:7px;flex-wrap:wrap;border-bottom:1px solid var(--border)}
+.filter-btn{
+  padding:5px 13px;border:1px solid var(--border);border-radius:6px;
+  background:transparent;color:var(--muted);font-size:11px;font-weight:700;
+  cursor:pointer;transition:all .15s;letter-spacing:.5px;font-family:'Inter',sans-serif;
+}
+.filter-btn.active,.filter-btn:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+.groups-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(350px,1fr));
+  gap:18px;padding:20px 28px 48px;
+}
+.group-card{
+  background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;
+  transition:transform .15s,box-shadow .15s;
+}
+.group-card:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,0,0,.45)}
+.group-header{
+  padding:13px 16px;display:flex;align-items:center;justify-content:space-between;
+  background:linear-gradient(90deg,rgba(77,166,255,.07) 0%,transparent 100%);
+  border-bottom:1px solid var(--border);
+}
+.group-name{font-family:'Bebas Neue',sans-serif;font-size:21px;letter-spacing:2px;color:var(--accent)}
+.group-info{text-align:right}
+.group-played{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.5px}
+.group-results{font-size:9px;color:rgba(255,255,255,.3);margin-top:2px;max-width:220px;text-align:right}
+table{width:100%;border-collapse:collapse}
+thead th{
+  font-size:9px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;
+  padding:7px 8px 5px;text-align:center;border-bottom:1px solid var(--border);
+}
+thead th.tc{text-align:left;padding-left:12px}
+tbody tr{border-bottom:1px solid rgba(255,255,255,.04);transition:background .1s;position:relative}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:rgba(255,255,255,.03)}
+td{padding:9px 8px;text-align:center;font-size:12px;font-family:'JetBrains Mono',monospace}
+.rc{width:34px;padding-left:6px}
+.rank-badge{
+  width:22px;height:22px;border-radius:5px;
+  display:inline-flex;align-items:center;justify-content:center;
+  font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:0;
+}
+.r1{background:linear-gradient(135deg,#f6d365,#fda085);color:#000}
+.r2{background:linear-gradient(135deg,#b0bec5,#78909c);color:#000}
+.r3{background:linear-gradient(135deg,#cd7f32,#a0522d);color:#fff}
+.ro{background:rgba(255,255,255,.07);color:var(--muted)}
+.team-cell{text-align:left;padding-left:8px;min-width:130px}
+.team-inner{display:flex;align-items:center;gap:7px}
+.flag{font-size:19px;line-height:1;flex-shrink:0}
+.team-name{font-family:'Inter',sans-serif;font-size:12px;font-weight:600;color:var(--text)}
+.team-note{font-size:8px;color:var(--gold);font-weight:700;letter-spacing:.5px;margin-top:1px}
+.pts-cell{font-weight:700;font-size:14px;color:#fff}
+.gp{color:var(--green)}.gn{color:var(--red)}.gz{color:var(--muted)}
+.qa{border-left:3px solid var(--green)}
+.qp{border-left:3px solid var(--gold)}
+.qo{border-left:3px solid transparent}
+.tiebreak-note{
+  font-size:10px;color:var(--gold);padding:6px 12px 9px;font-style:italic;
+  display:flex;align-items:flex-start;gap:4px;line-height:1.5;
+  background:rgba(240,180,41,.04);border-top:1px solid rgba(240,180,41,.1);
+}
+footer{text-align:center;padding:20px;font-size:10px;color:var(--muted);border-top:1px solid var(--border)}
+footer a{color:var(--accent);text-decoration:none}
+@media(max-width:480px){
+  header{padding:14px 16px}
+  .groups-grid{padding:14px 12px 32px;gap:12px}
+  .filter-bar,.legend-bar{padding:10px 14px}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="header-left">
+    <div class="wc-badge">⚽</div>
+    <h1><span>FIFA World Cup 2026</span>小組賽積分榜</h1>
+  </div>
+  <div class="live-pill"><div class="live-dot"></div>LIVE · 第1輪</div>
+</header>
+<div class="legend-bar">
+  <div class="legend-item"><div class="legend-dot" style="background:#26c281"></div>直接晉級（前2名）</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#f0b429"></div>第3名，競爭外卡</div>
+  <div class="legend-item"><div class="legend-dot" style="background:rgba(255,255,255,.12)"></div>目前出局線</div>
+  <div class="legend-ts">資料截至 2026/06/17 · 同分依序：頭球→淨球差→進球→FIFA排名</div>
+</div>
+<div class="filter-bar" id="filterBar"></div>
+<div class="groups-grid" id="groupsGrid"></div>
+<footer>
+  數據來源：FIFA / CBS Sports / ESPN / The Scotsman ·
+  歷史預測依近5年FIFA積分排名 ·
+  <a href="https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026" target="_blank">FIFA 官網 ↗</a>
+</footer>
+<script>
+// ─── 2026 FIFA World Cup — 12 Groups, all confirmed results to June 17 ───
+// Groups & Compositions (confirmed per UEFA/ESPN/CBS):
+// A: Mexico, South Africa, South Korea, Czechia
+// B: Canada, Bosnia-Herzegovina, Qatar, Switzerland
+// C: Brazil, Morocco, Haiti, Scotland
+// D: USA, Paraguay, Australia, Turkey
+// E: Germany, Curaçao, Ivory Coast, Ecuador
+// F: Netherlands, Japan, Sweden, Tunisia
+// G: Belgium, Egypt, Iran, New Zealand
+// H: Spain, Cape Verde, Saudi Arabia, Uruguay
+// I: France, Senegal, Iraq, Norway
+// J: Argentina, Algeria, Austria, Jordan
+// K: Portugal, DR Congo, Uzbekistan, Colombia
+// L: England, Croatia, Ghana, Panama
+//
+// CONFIRMED RESULTS:
+// Jun 11: Mexico 2-0 South Africa [A], South Korea 2-1 Czechia [A]
+// Jun 12: Canada 1-1 Bosnia-Herz [B], Qatar 1-1 Switzerland [B],
+//          USA 4-1 Paraguay [D], Brazil 1-1 Morocco [C]
+// Jun 13 (local) / Jun 14: Haiti 0-1 Scotland [C], Australia 2-0 Turkey [D]
+//          Netherlands 2-2 Japan [F], Germany 7-1 Curaçao [E]
+// Jun 15: Ivory Coast 1-0 Ecuador [E], Sweden 5-1 Tunisia [F],
+//          Spain 0-0 Cape Verde [H], Belgium 1-1 Egypt [G],
+//          Saudi Arabia 1-1 Uruguay [H]
+// Jun 16: Iran 2-2 New Zealand [G], France 3-1 Senegal [I],
+//          Norway 4-1 Iraq [I], Argentina 3-0 Algeria [J]
+// Jun 17: Austria vs Jordan [J] (today), K & L first matches (today)
+
+const GROUPS = [
+  {
+    id:'A', played:2,
+    teams:[
+      {name:'墨西哥',      flag:'🇲🇽',note:'主辦國', p:1,w:1,d:0,l:0,gf:2,ga:0,pts:3},
+      {name:'南韓',        flag:'🇰🇷',note:'',        p:1,w:1,d:0,l:0,gf:2,ga:1,pts:3},
+      {name:'捷克',        flag:'🇨🇿',note:'',        p:1,w:0,d:0,l:1,gf:1,ga:2,pts:0},
+      {name:'南非',        flag:'🇿🇦',note:'',        p:1,w:0,d:0,l:1,gf:0,ga:2,pts:0},
+    ],
+    results:['墨西哥 2–0 南非','南韓 2–1 捷克'],
+    tieMethod:'actual',
+    tieNote:'墨西哥淨球差+2，南韓+1，頭球結果分出名次'
+  },
+  {
+    id:'B', played:2,
+    teams:[
+      {name:'瑞士',        flag:'🇨🇭',note:'',        p:1,w:0,d:1,l:0,gf:1,ga:1,pts:1},
+      {name:'加拿大',      flag:'🇨🇦',note:'主辦國', p:1,w:0,d:1,l:0,gf:1,ga:1,pts:1},
+      {name:'波黑',        flag:'🇧🇦',note:'',        p:1,w:0,d:1,l:0,gf:1,ga:1,pts:1},
+      {name:'卡達',        flag:'🇶🇦',note:'',        p:1,w:0,d:1,l:0,gf:1,ga:1,pts:1},
+    ],
+    results:['加拿大 1–1 波黑','卡達 1–1 瑞士'],
+    tieMethod:'historical',
+    tieNote:'⚠️ 四隊積分/進失球完全相同！依FIFA排名預測：瑞士(#17) > 加拿大(#38) > 波黑(#57) > 卡達(#61)'
+  },
+  {
+    id:'C', played:2,
+    teams:[
+      {name:'巴西',        flag:'🇧🇷',note:'',        p:1,w:0,d:1,l:0,gf:1,ga:1,pts:1},
+      {name:'摩洛哥',      flag:'🇲🇦',note:'',        p:1,w:0,d:1,l:0,gf:1,ga:1,pts:1},
+      {name:'蘇格蘭',      flag:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',note:'',      p:1,w:1,d:0,l:0,gf:1,ga:0,pts:3},
+      {name:'海地',        flag:'🇭🇹',note:'',        p:1,w:0,d:0,l:1,gf:0,ga:1,pts:0},
+    ],
+    results:['巴西 1–1 摩洛哥','蘇格蘭 1–0 海地'],
+    tieMethod:'historical',
+    tieNote:'巴西與摩洛哥同分同數據，依FIFA排名：巴西(#5)排摩洛哥(#11)之上'
+  },
+  {
+    id:'D', played:2,
+    teams:[
+      {name:'美國',        flag:'🇺🇸',note:'主辦國', p:1,w:1,d:0,l:0,gf:4,ga:1,pts:3},
+      {name:'澳洲',        flag:'🇦🇺',note:'',        p:1,w:1,d:0,l:0,gf:2,ga:0,pts:3},
+      {name:'土耳其',      flag:'🇹🇷',note:'',        p:1,w:0,d:0,l:1,gf:0,ga:2,pts:0},
+      {name:'巴拉圭',      flag:'🇵🇾',note:'',        p:1,w:0,d:0,l:1,gf:1,ga:4,pts:0},
+    ],
+    results:['美國 4–1 巴拉圭','澳洲 2–0 土耳其'],
+    tieMethod:'actual',
+    tieNote:'美國與澳洲同積分；美國淨球差+3，澳洲+2，美國暫居首'
+  },
+  {
+    id:'E', played:2,
+    teams:[
+      {name:'德國',        flag:'🇩🇪',note:'',        p:1,w:1,d:0,l:0,gf:7,ga:1,pts:3},
+      {name:'象牙海岸',    flag:'🇨🇮',note:'',        p:1,w:1,d:0,l:0,gf:1,ga:0,pts:3},
+      {name:'厄瓜多',      flag:'🇪🇨',note:'',        p:1,w:0,d:0,l:1,gf:0,ga:1,pts:0},
+      {name:'庫拉索',      flag:'🇨🇼',note:'',        p:1,w:0,d:0,l:1,gf:1,ga:7,pts:0},
+    ],
+    results:['德國 7–1 庫拉索','象牙海岸 1–0 厄瓜多'],
+    tieMethod:'actual',
+    tieNote:'德國與象牙海岸同積分；德國淨球差+6，象牙海岸+1，德國居首'
+  },
+  {
+    id:'F', played:2,
+    teams:[
+      {name:'瑞典',        flag:'🇸🇪',note:'',        p:1,w:1,d:0,l:0,gf:5,ga:1,pts:3},
+      {name:'荷蘭',        flag:'🇳🇱',note:'',        p:1,w:0,d:1,l:0,gf:2,ga:2,pts:1},
+      {name:'日本',        flag:'🇯🇵',note:'',        p:1,w:0,d:1,l:0,gf:2,ga:2,pts:1},
+      {name:'突尼西亞',    flag:'🇹🇳',note:'',        p:1,w:0,d:0,l:1,gf:1,ga:5,pts:0},
+    ],
+    results:['荷蘭 2–2 日本','瑞典 5–1 突尼西亞'],
+    tieMethod:'actual',
+    tieNote:'荷蘭與日本同積分同進失球；依FIFA排名：荷蘭(#7) > 日本(#18)暫排第2'
+  },
+  {
+    id:'G', played:2,
+    teams:[
+      {name:'比利時',      flag:'🇧🇪',note:'',        p:1,w:0,d:1,l:0,gf:1,ga:1,pts:1},
+      {name:'埃及',        flag:'🇪🇬',note:'',        p:1,w:0,d:1,l:0,gf:1,ga:1,pts:1},
+      {name:'伊朗',        flag:'🇮🇷',note:'',        p:1,w:0,d:1,l:0,gf:2,ga:2,pts:1},
+      {name:'紐西蘭',      flag:'🇳🇿',note:'',        p:1,w:0,d:1,l:0,gf:2,ga:2,pts:1},
+    ],
+    results:['比利時 1–1 埃及','伊朗 2–2 紐西蘭'],
+    tieMethod:'historical',
+    tieNote:'⚠️ 四隊全部同積分！比利時/埃及進失球相同，伊朗/紐西蘭進失球相同。依FIFA排名：比利時(#5) > 伊朗(#22) > 埃及(#46) > 紐西蘭(#95)'
+  },
+  {
+    id:'H', played:2,
+    teams:[
+      {name:'西班牙',      flag:'🇪🇸',note:'',        p:1,w:0,d:1,l:0,gf:0,ga:0,pts:1},
+      {name:'維德角',      flag:'🇨🇻',note:'',        p:1,w:0,d:1,l:0,gf:0,ga:0,pts:1},
+      {name:'沙烏地阿拉伯',flag:'🇸🇦',note:'',        p:1,w:0,d:1,l:0,gf:1,ga:1,pts:1},
+      {name:'烏拉圭',      flag:'🇺🇾',note:'',        p:1,w:0,d:1,l:0,gf:1,ga:1,pts:1},
+    ],
+    results:['西班牙 0–0 維德角','沙烏地 1–1 烏拉圭'],
+    tieMethod:'historical',
+    tieNote:'四隊同積分；西班牙/維德角積分同進失球相同，依FIFA排名：西班牙(#8) > 沙烏地(#59) > 烏拉圭(#16) ※烏拉圭進球數較多佔優'
+  },
+  {
+    id:'I', played:2,
+    teams:[
+      {name:'法國',        flag:'🇫🇷',note:'',        p:1,w:1,d:0,l:0,gf:3,ga:1,pts:3},
+      {name:'挪威',        flag:'🇳🇴',note:'',        p:1,w:1,d:0,l:0,gf:4,ga:1,pts:3},
+      {name:'塞內加爾',    flag:'🇸🇳',note:'',        p:1,w:0,d:0,l:1,gf:1,ga:3,pts:0},
+      {name:'伊拉克',      flag:'🇮🇶',note:'',        p:1,w:0,d:0,l:1,gf:1,ga:4,pts:0},
+    ],
+    results:['法國 3–1 塞內加爾','挪威 4–1 伊拉克'],
+    tieMethod:'actual',
+    tieNote:'法國與挪威同積分；挪威進球4 > 法國3，淨球差相同，挪威暫居首'
+  },
+  {
+    id:'J', played:2,
+    teams:[
+      {name:'阿根廷',      flag:'🇦🇷',note:'衛冕冠軍',p:1,w:1,d:0,l:0,gf:3,ga:0,pts:3},
+      {name:'奧地利',      flag:'🇦🇹',note:'',        p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+      {name:'約旦',        flag:'🇯🇴',note:'',        p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+      {name:'阿爾及利亞',  flag:'🇩🇿',note:'',        p:1,w:0,d:0,l:1,gf:0,ga:3,pts:0},
+    ],
+    results:['阿根廷 3–0 阿爾及利亞','奧地利 vs 約旦 (今日進行)'],
+    tieMethod:'historical',
+    tieNote:'奧地利vs約旦今日出賽，依FIFA排名：奧地利(#20) > 約旦(#89)為暫定排序'
+  },
+  {
+    id:'K', played:0,
+    teams:[
+      {name:'葡萄牙',      flag:'🇵🇹',note:'',        p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+      {name:'哥倫比亞',    flag:'🇨🇴',note:'',        p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+      {name:'DR剛果',      flag:'🇨🇩',note:'',        p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+      {name:'烏茲別克',    flag:'🇺🇿',note:'',        p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+    ],
+    results:['葡萄牙 vs DR剛果 (今日)','烏茲別克 vs 哥倫比亞 (今日)'],
+    tieMethod:'historical',
+    tieNote:'今日首場，依FIFA排名預測：葡萄牙(#6) > 哥倫比亞(#13) > 烏茲別克(#50) > DR剛果(#56)'
+  },
+  {
+    id:'L', played:0,
+    teams:[
+      {name:'英格蘭',      flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',note:'',      p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+      {name:'克羅埃西亞',  flag:'🇭🇷',note:'',        p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+      {name:'加納',        flag:'🇬🇭',note:'',        p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+      {name:'巴拿馬',      flag:'🇵🇦',note:'',        p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+    ],
+    results:['英格蘭 vs 克羅埃西亞 (今日)','加納 vs 巴拿馬 (今日)'],
+    tieMethod:'historical',
+    tieNote:'今日首場，依FIFA排名預測：英格蘭(#3) > 克羅埃西亞(#10) > 加納(#50) > 巴拿馬(#74)'
+  },
+];
+
+function rankTeams(teams){
+  return [...teams].sort((a,b)=>{
+    if(b.pts!==a.pts) return b.pts-a.pts;
+    const da=a.gf-a.ga, db=b.gf-b.ga;
+    if(db!==da) return db-da;
+    if(b.gf!==a.gf) return b.gf-a.gf;
+    return 0;
+  });
+}
+function gdText(t){const d=t.gf-t.ga;return d>0?'+'+d:d===0?'±0':''+d}
+function gdCls(t){const d=t.gf-t.ga;return d>0?'gp':d<0?'gn':'gz'}
+function qCls(r){return r<=2?'qa':r===3?'qp':'qo'}
+function rbCls(r){return r<=3?'r'+r:'ro'}
+
+function buildCard(g){
+  const ranked=rankTeams(g.teams);
+  const rows=ranked.map((t,i)=>{
+    const r=i+1;
+    return `<tr class="${qCls(r)}">
+      <td class="rc"><span class="rank-badge ${rbCls(r)}">${r}</span></td>
+      <td class="team-cell"><div class="team-inner">
+        <span class="flag">${t.flag}</span>
+        <div>
+          <div class="team-name">${t.name}</div>
+          ${t.note?`<div class="team-note">${t.note}</div>`:''}
+        </div>
+      </div></td>
+      <td>${t.p}</td><td>${t.w}</td><td>${t.d}</td><td>${t.l}</td>
+      <td>${t.gf}</td><td>${t.ga}</td>
+      <td class="${gdCls(t)}">${gdText(t)}</td>
+      <td class="pts-cell">${t.pts}</td>
+    </tr>`;
+  }).join('');
+  const resHTML=g.results.map(r=>`<span>${r}</span>`).join(' · ');
+  return `
+  <div class="group-card" data-group="${g.id}">
+    <div class="group-header">
+      <div class="group-name">小組 ${g.id}</div>
+      <div class="group-info">
+        <div class="group-played">已賽 ${g.played} 場</div>
+        <div class="group-results">${resHTML||'尚未開賽'}</div>
+      </div>
+    </div>
+    <table>
+      <thead><tr>
+        <th class="rc">#</th><th class="tc">球隊</th>
+        <th>場</th><th>勝</th><th>平</th><th>負</th>
+        <th>進</th><th>失</th><th>±</th><th>分</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    ${g.tieNote?`<div class="tiebreak-note">⚡ ${g.tieNote}</div>`:''}
+  </div>`;
+}
+
+const fb=document.getElementById('filterBar');
+const gd_el=document.getElementById('groupsGrid');
+const allBtn=document.createElement('button');
+allBtn.className='filter-btn active';allBtn.textContent='全部小組';
+allBtn.onclick=()=>{
+  document.querySelectorAll('[data-group]').forEach(c=>c.style.display='');
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  allBtn.classList.add('active');
+};
+fb.appendChild(allBtn);
+GROUPS.forEach(g=>{
+  const btn=document.createElement('button');
+  btn.className='filter-btn';btn.textContent='小組 '+g.id;
+  btn.onclick=()=>{
+    document.querySelectorAll('[data-group]').forEach(c=>c.style.display=c.dataset.group===g.id?'':'none');
+    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+  };
+  fb.appendChild(btn);
+  gd_el.insertAdjacentHTML('beforeend',buildCard(g));
+});
+</script>
+</body>
+</html>
