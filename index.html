@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>2026 FIFA 世界盃 — 小組積分榜</title>
+<title>2026 FIFA 世界盃 — 小組積分榜 (Live)</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
 :root{
@@ -127,26 +127,158 @@ footer a{color:var(--accent);text-decoration:none}
 <div class="filter-bar" id="filterBar"></div>
 <div class="groups-grid" id="groupsGrid"></div>
 <footer>
-  數據來源：FIFA / CBS Sports / ESPN / The Scotsman ·
-  歷史預測依近5年FIFA積分排名 ·
+  數據來源：<a href="https://www.football-data.org/" target="_blank">football-data.org ↗</a>（即時 API） ·
   <a href="https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026" target="_blank">FIFA 官網 ↗</a>
 </footer>
 <script>
-function gdText(t){const d=t.gf-t.ga;return d>0?'+'+d:d===0?'±0':''+d}
-function gdCls(t){const d=t.gf-t.ga;return d>0?'gp':d<0?'gn':'gz'}
-function qCls(r){return r<=2?'qa':r===3?'qp':'qo'}
-function rbCls(r){return r<=3?'r'+r:'ro'}
+const WORKER = 'https://wc2026.ct9915.workers.dev';
 
-function buildCard(g){
-  const rows=g.teams.map((t,i)=>{
-    const r=i+1;
+const TEAM_MAP = {
+  'Mexico':                        ['墨西哥',       '🇲🇽', '主辦國'],
+  'South Korea':                   ['南韓',         '🇰🇷', ''],
+  'Korea Republic':                ['南韓',         '🇰🇷', ''],
+  'Czechia':                       ['捷克',         '🇨🇿', ''],
+  'Czech Republic':                ['捷克',         '🇨🇿', ''],
+  'South Africa':                  ['南非',         '🇿🇦', ''],
+  'Switzerland':                   ['瑞士',         '🇨🇭', ''],
+  'Canada':                        ['加拿大',       '🇨🇦', '主辦國'],
+  'Bosnia and Herzegovina':        ['波黑',         '🇧🇦', ''],
+  'Bosnia & Herzegovina':          ['波黑',         '🇧🇦', ''],
+  'Bosnia-Herzegovina':            ['波黑',         '🇧🇦', ''],
+  'Bosnia Herzegovina':            ['波黑',         '🇧🇦', ''],
+  'Qatar':                         ['卡達',         '🇶🇦', ''],
+  'Brazil':                        ['巴西',         '🇧🇷', ''],
+  'Morocco':                       ['摩洛哥',       '🇲🇦', ''],
+  'Scotland':                      ['蘇格蘭',       '🏴󠁧󠁢󠁳󠁣󠁴󠁿', ''],
+  'Haiti':                         ['海地',         '🇭🇹', ''],
+  'United States':                 ['美國',         '🇺🇸', '主辦國'],
+  'USA':                           ['美國',         '🇺🇸', '主辦國'],
+  'Australia':                     ['澳洲',         '🇦🇺', ''],
+  'Turkey':                        ['土耳其',       '🇹🇷', ''],
+  'Türkiye':                       ['土耳其',       '🇹🇷', ''],
+  'Paraguay':                      ['巴拉圭',       '🇵🇾', ''],
+  'Germany':                       ['德國',         '🇩🇪', ''],
+  "Côte d'Ivoire":                 ['象牙海岸',     '🇨🇮', ''],
+  'Ivory Coast':                   ['象牙海岸',     '🇨🇮', ''],
+  'Ecuador':                       ['厄瓜多',       '🇪🇨', ''],
+  'Curaçao':                       ['庫拉索',       '🇨🇼', ''],
+  'Curacao':                       ['庫拉索',       '🇨🇼', ''],
+  'Sweden':                        ['瑞典',         '🇸🇪', ''],
+  'Netherlands':                   ['荷蘭',         '🇳🇱', ''],
+  'Japan':                         ['日本',         '🇯🇵', ''],
+  'Tunisia':                       ['突尼西亞',     '🇹🇳', ''],
+  'Belgium':                       ['比利時',       '🇧🇪', ''],
+  'Egypt':                         ['埃及',         '🇪🇬', ''],
+  'Iran':                          ['伊朗',         '🇮🇷', ''],
+  'New Zealand':                   ['紐西蘭',       '🇳🇿', ''],
+  'Spain':                         ['西班牙',       '🇪🇸', ''],
+  'Cape Verde':                    ['維德角',       '🇨🇻', ''],
+  'Cabo Verde':                    ['維德角',       '🇨🇻', ''],
+  'Saudi Arabia':                  ['沙烏地阿拉伯', '🇸🇦', ''],
+  'Uruguay':                       ['烏拉圭',       '🇺🇾', ''],
+  'France':                        ['法國',         '🇫🇷', ''],
+  'Norway':                        ['挪威',         '🇳🇴', ''],
+  'Senegal':                       ['塞內加爾',     '🇸🇳', ''],
+  'Iraq':                          ['伊拉克',       '🇮🇶', ''],
+  'Argentina':                     ['阿根廷',       '🇦🇷', '衛冕冠軍'],
+  'Austria':                       ['奧地利',       '🇦🇹', ''],
+  'Jordan':                        ['約旦',         '🇯🇴', ''],
+  'Algeria':                       ['阿爾及利亞',   '🇩🇿', ''],
+  'Portugal':                      ['葡萄牙',       '🇵🇹', ''],
+  'Colombia':                      ['哥倫比亞',     '🇨🇴', ''],
+  'DR Congo':                      ['DR剛果',       '🇨🇩', ''],
+  'Congo DR':                      ['DR剛果',       '🇨🇩', ''],
+  'Democratic Republic of Congo':  ['DR剛果',       '🇨🇩', ''],
+  'Uzbekistan':                    ['烏茲別克',     '🇺🇿', ''],
+  'England':                       ['英格蘭',       '🏴󠁧󠁢󠁥󠁮󠁧󠁿', ''],
+  'Croatia':                       ['克羅埃西亞',   '🇭🇷', ''],
+  'Ghana':                         ['加納',         '🇬🇭', ''],
+  'Panama':                        ['巴拿馬',       '🇵🇦', ''],
+};
+
+function teamInfo(name) { return TEAM_MAP[name] || [name, '🏳️', '']; }
+function normalizeGroup(raw) { return raw.replace(/^(GROUP_|Group |group_)/, ''); }
+
+function tieNote(teams) {
+  let i = 0; const notes = [];
+  while (i < teams.length) {
+    let j = i + 1;
+    while (j < teams.length && teams[j].pts === teams[i].pts) j++;
+    const tied = teams.slice(i, j);
+    if (tied.length > 1) {
+      const names = tied.map(t => t.name).join('、');
+      const gds = tied.map(t => t.gf - t.ga);
+      const gfs = tied.map(t => t.gf);
+      if (new Set(gds).size === 1 && new Set(gfs).size === 1) {
+        notes.push(`⚠️ ${names} 積分/淨球差/進球完全相同，依FIFA排名決定順序`);
+      } else if (new Set(gds).size === 1) {
+        notes.push(`${names} 同積分同淨球差，依進球數分出名次`);
+      } else {
+        const leader = tied.reduce((a, b) => (a.gf - a.ga >= b.gf - b.ga ? a : b));
+        notes.push(`${names} 同積分；${leader.name}淨球差較優暫居前`);
+      }
+    }
+    i = j;
+  }
+  return notes.join('；') || null;
+}
+
+function transform(standingsData, matchesData) {
+  const groupResults = {};
+  let totalPlayed = 0;
+  for (const m of matchesData.matches) {
+    const grp = normalizeGroup(m.group || '');
+    if (!grp) continue;
+    if (m.status === 'FINISHED' || m.status === 'PAUSED') {
+      const hs = m.score.fullTime.home, as_ = m.score.fullTime.away;
+      if (hs !== null) {
+        const home = teamInfo(m.homeTeam.name)[0];
+        const away = teamInfo(m.awayTeam.name)[0];
+        groupResults[grp] = groupResults[grp] || [];
+        groupResults[grp].push(`${home} ${hs}–${as_} ${away}`);
+      }
+      totalPlayed++;
+    }
+  }
+
+  const groups = [];
+  const seen = new Set();
+  for (const standing of standingsData.standings) {
+    if (standing.type !== 'TOTAL') continue;
+    const grp = normalizeGroup(standing.group || '');
+    if (!grp || seen.has(grp)) continue;
+    seen.add(grp);
+
+    const teams = standing.table.map(row => {
+      const [name, flag, note] = teamInfo(row.team.name);
+      return { name, flag, note, p: row.playedGames, w: row.won, d: row.draw, l: row.lost, gf: row.goalsFor, ga: row.goalsAgainst, pts: row.points };
+    });
+    const played = teams.reduce((s, t) => s + t.p, 0) / 2;
+    groups.push({ id: grp, played, teams, results: groupResults[grp] || [], tieNote: tieNote(teams) });
+  }
+  groups.sort((a, b) => a.id.localeCompare(b.id));
+
+  const round = totalPlayed <= 24 ? '第1輪' : totalPlayed <= 48 ? '第2輪' : '第3輪';
+  const now = new Date();
+  const lastUpdated = now.toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
+  return { lastUpdated, round, groups };
+}
+
+function gdText(t) { const d = t.gf - t.ga; return d > 0 ? '+' + d : d === 0 ? '±0' : '' + d; }
+function gdCls(t)  { const d = t.gf - t.ga; return d > 0 ? 'gp' : d < 0 ? 'gn' : 'gz'; }
+function qCls(r)   { return r <= 2 ? 'qa' : r === 3 ? 'qp' : 'qo'; }
+function rbCls(r)  { return r <= 3 ? 'r' + r : 'ro'; }
+
+function buildCard(g) {
+  const rows = g.teams.map((t, i) => {
+    const r = i + 1;
     return `<tr class="${qCls(r)}">
       <td class="rc"><span class="rank-badge ${rbCls(r)}">${r}</span></td>
       <td class="team-cell"><div class="team-inner">
         <span class="flag">${t.flag}</span>
         <div>
           <div class="team-name">${t.name}</div>
-          ${t.note?`<div class="team-note">${t.note}</div>`:''}
+          ${t.note ? `<div class="team-note">${t.note}</div>` : ''}
         </div>
       </div></td>
       <td>${t.p}</td><td>${t.w}</td><td>${t.d}</td><td>${t.l}</td>
@@ -155,14 +287,14 @@ function buildCard(g){
       <td class="pts-cell">${t.pts}</td>
     </tr>`;
   }).join('');
-  const resHTML=g.results.map(r=>`<span>${r}</span>`).join(' · ');
+  const resHTML = g.results.map(r => `<span>${r}</span>`).join(' · ');
   return `
   <div class="group-card" data-group="${g.id}">
     <div class="group-header">
       <div class="group-name">小組 ${g.id}</div>
       <div class="group-info">
         <div class="group-played">已賽 ${g.played} 場</div>
-        <div class="group-results">${resHTML||'尚未開賽'}</div>
+        <div class="group-results">${resHTML || '尚未開賽'}</div>
       </div>
     </div>
     <table>
@@ -173,47 +305,52 @@ function buildCard(g){
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>
-    ${g.tieNote?`<div class="tiebreak-note">⚡ ${g.tieNote}</div>`:''}
+    ${g.tieNote ? `<div class="tiebreak-note">⚡ ${g.tieNote}</div>` : ''}
   </div>`;
 }
 
-async function init(){
-  const res = await fetch('data.json', { cache: 'no-store' });
-  if(!res.ok) throw new Error('HTTP '+res.status);
-  const data = await res.json();
+async function init() {
+  const [sRes, mRes] = await Promise.all([
+    fetch(`${WORKER}/standings`, { cache: 'no-store' }),
+    fetch(`${WORKER}/matches`,   { cache: 'no-store' }),
+  ]);
+  if (!sRes.ok) throw new Error('standings HTTP ' + sRes.status);
+  if (!mRes.ok) throw new Error('matches HTTP ' + mRes.status);
+
+  const data = transform(await sRes.json(), await mRes.json());
 
   document.getElementById('livePill').innerHTML =
     `<div class="live-dot"></div>LIVE · ${data.round}`;
   document.getElementById('legendTs').textContent =
     `資料截至 ${data.lastUpdated} · 同分依序：淨球差→進球→FIFA排名`;
 
-  const fb=document.getElementById('filterBar');
-  const gd_el=document.getElementById('groupsGrid');
+  const fb = document.getElementById('filterBar');
+  const gd_el = document.getElementById('groupsGrid');
 
-  const allBtn=document.createElement('button');
-  allBtn.className='filter-btn active';allBtn.textContent='全部小組';
-  allBtn.onclick=()=>{
-    document.querySelectorAll('[data-group]').forEach(c=>c.style.display='');
-    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  const allBtn = document.createElement('button');
+  allBtn.className = 'filter-btn active'; allBtn.textContent = '全部小組';
+  allBtn.onclick = () => {
+    document.querySelectorAll('[data-group]').forEach(c => c.style.display = '');
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     allBtn.classList.add('active');
   };
   fb.appendChild(allBtn);
 
-  data.groups.forEach(g=>{
-    const btn=document.createElement('button');
-    btn.className='filter-btn';btn.textContent='小組 '+g.id;
-    btn.onclick=()=>{
-      document.querySelectorAll('[data-group]').forEach(c=>c.style.display=c.dataset.group===g.id?'':'none');
-      document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  data.groups.forEach(g => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn'; btn.textContent = '小組 ' + g.id;
+    btn.onclick = () => {
+      document.querySelectorAll('[data-group]').forEach(c => c.style.display = c.dataset.group === g.id ? '' : 'none');
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
     };
     fb.appendChild(btn);
-    gd_el.insertAdjacentHTML('beforeend',buildCard(g));
+    gd_el.insertAdjacentHTML('beforeend', buildCard(g));
   });
 }
 
-init().catch(err=>{
-  document.getElementById('groupsGrid').innerHTML=
+init().catch(err => {
+  document.getElementById('groupsGrid').innerHTML =
     '<p style="color:var(--muted);padding:2rem;text-align:center">數據載入失敗，請重新整理頁面。</p>';
   console.error(err);
 });
