@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026/06/21 22:35 UTC",
+  "lastUpdated": "2026/06/21 23:37 UTC",
   "round": "第2輪",
   "groups": [
     {
@@ -445,28 +445,28 @@
           "pts": 4
         },
         {
-          "name": "Cape Verde Islands",
-          "flag": "🏳️",
-          "note": "",
-          "p": 2,
-          "w": 1,
-          "d": 1,
-          "l": 0,
-          "gf": 1,
-          "ga": 0,
-          "pts": 4
-        },
-        {
           "name": "烏拉圭",
           "flag": "🇺🇾",
           "note": "",
           "p": 2,
           "w": 0,
-          "d": 1,
-          "l": 1,
-          "gf": 1,
+          "d": 2,
+          "l": 0,
+          "gf": 3,
+          "ga": 3,
+          "pts": 2
+        },
+        {
+          "name": "Cape Verde Islands",
+          "flag": "🏳️",
+          "note": "",
+          "p": 2,
+          "w": 0,
+          "d": 2,
+          "l": 0,
+          "gf": 2,
           "ga": 2,
-          "pts": 1
+          "pts": 2
         },
         {
           "name": "沙烏地阿拉伯",
@@ -486,7 +486,7 @@
         "沙烏地阿拉伯 1–1 烏拉圭",
         "西班牙 4–0 沙烏地阿拉伯"
       ],
-      "tieNote": "西班牙、Cape Verde Islands 同積分；西班牙淨球差較優暫居前；烏拉圭、沙烏地阿拉伯 同積分；烏拉圭淨球差較優暫居前"
+      "tieNote": "烏拉圭、Cape Verde Islands 同積分同淨球差，依進球數分出名次"
     },
     {
       "id": "I",
